@@ -1,0 +1,399 @@
+﻿@model JsonProject3.Controllers.HomeController.allTables
+@{
+    ViewBag.Title = "Index";
+}
+<script src="~/Scripts/jquery-3.4.1.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<h2>Personeller</h2>
+<br />
+<hr />
+<a href="#" class="btn btn-success" onclick="AddDepartman(0)">Departman Ekle </a>
+<a href="#" class="btn btn-warning" onclick="UpdateDepartman()">Departman Düzenle </a>
+<a href="#" class="btn btn-danger" onclick="DeleteDepartman()">Departman Sil </a>
+<a href="#" class="btn btn-info pull-right" onclick="AddPersonel(0)">Personel Ekle </a>
+
+<br />
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Resim</th>
+            <th scope="col">Resim Yükle</th>
+            <th scope="col">Ad</th>
+            <th scope="col">Soyad</th>
+            <th scope="col">Departman</th>
+            <th scope="col">İşlem</th>
+            <th scope="col">Dosya İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.perList)
+        {
+            <tr class="row_@item.id">
+                <th scope="row">@item.id</th>
+                @if (item.ResimYolu != null)
+                {
+                    <td>
+                        <img src="@item.ResimYolu" alt="resim" width="150" height="150" />
+                    </td>
+                }
+                else
+                {
+                    <td>
+                        Resim Yüklenmedi
+                    </td>
+                }
+                <td>
+                    @using (Html.BeginForm("FileUpload", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        <input type="file" id="image" name="image" class="form-control" />
+                        <br />
+                        <a href="#" class="btn btn-success btn-xs" onclick="LoadFile(@item.id)">Resim Yükle</a>
+                        @*<input type="button" class="btn btn-success btn-xs" value="Resim Yükle" id="btnSend" data-data1="@item.id" />*@
+
+                    }
+                    <br />
+                </td>
+                <td>@item.ad</td>
+                <td>@item.soyad</td>
+                @foreach (var item2 in Model.depList.Where(x => x.Id == item.DepartmanId))
+                {
+                    <td> @item2.DepartmanAdi </td>
+                }
+                <td>
+                    <a href="#" class="btn btn-warning btn-xs" onclick="UpdatePersonel(@item.id)">Update</a>
+                    <a href="#" class="btn btn-danger btn-xs" onclick="DeletePersonel(@item.id)">Delete</a>
+                </td>
+                <td>
+                    <a href="#" class="btn btn-info btn-xs" onclick="DosyaIslem(@item.id)">Dosyalar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+
+</table>
+
+<div class="modal fade" id="MyModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4 id="ModalTitle"></h4>
+            </div>
+            <div class="modal-body">
+                <form id="form">
+                    <fieldset id="SubmitForm">
+                        @Html.HiddenFor(m => m.personel.id, new { @id = "perid", @name = "id" })
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.personel.ad, new { @id = "ad", @name = "ad", @class = "form-control", @placeholder = "Ad*" })
+                        </div>
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.personel.soyad, new { @id = "soyad", @name = "soyad", @class = "form-control", @placeholder = "Soyad*" })
+                        </div>
+                        <div class="form-group">
+                            @Html.DropDownListFor(m => m.personel.DepartmanId, ViewBag.ListOfDepartment as SelectList, "--Seçiniz--", new { @id = "Dropdwn", @class = "form-control" })
+                        </div>
+                        <div class="form-group">
+                            <a href="#" class="btn btn-block btn-danger" id="SavePersonel">Save</a>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="DosyaModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4>Dosyalar</h4>
+            </div>
+            <div class="modal-body">
+                <form id="form_dosyalar">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="ModalAddDepartman">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4>Departman Ekle</h4>
+            </div>
+            <div class="modal-body">
+                <form id="SubmitForm2">
+                    <fieldset>
+                        @Html.HiddenFor(m => m.departman.Id, new { @id = "depid", @name = "depid" })
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.departman.DepartmanAdi, new { @id = "depad", @name = "depad", @class = "form-control", @placeholder = "Departman Ad*" })
+                        </div>
+
+
+                        <div class="form-group">
+                            <a href="#" class="btn btn-block btn-danger" id="SaveDepartman">Save</a>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="DeleteConfirmation">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4>Personel Sil</h4>
+            </div>
+            <div class="modal-body">
+                <h4>Silmek istediğinize emin misiniz?</h4>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" data-dismiss="modal">İptal</a>
+                <a href="#" class="btn btn-danger" onclick="ConfirmDelete()">Evet</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="UpdateDepartmanModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4>Departman Düzenle</h4>
+            </div>
+            <div class="modal-body">
+                <form id="form">
+                    <fieldset id="SubmitForm3">
+                        <div class="form-group">
+                            @Html.DropDownListFor(m => m.departman.Id, ViewBag.ListOfDepartment as SelectList, "--Seçiniz--", new { @id = "Dropdwn", @class = "form-control" })
+                        </div>
+                        <div class="form-group">
+                            @Html.TextBoxFor(m => m.departman.DepartmanAdi, new { @id = "depad", @name = "depad", @class = "form-control", @placeholder = "Yeni Departman Ad*" })
+                        </div>
+
+                        <div class="form-group">
+                            <a href="#" class="btn btn-block btn-danger" id="SaveDepartman2">Save</a>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="DeleteDepartmanModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a href="#" class="close" data-dismiss="modal">&times;</a>
+                <h4>Departman Sil</h4>
+            </div>
+            <div class="modal-body">
+                <form id="form">
+                    <fieldset id="SubmitForm4">
+                        <div class="form-group">
+                            @Html.DropDownListFor(m => m.departman.Id, ViewBag.ListOfDepartment as SelectList, "--Seçiniz--", new { @id = "Dropdwn", @class = "form-control" })
+                        </div>
+                        <div class="form-group">
+                            <a href="#" class="btn btn-primary" data-dismiss="modal">İptal</a>
+                            <a href="#" class="btn btn-danger" onclick="ConfirmDepartmanDelete()">Evet</a>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function AddPersonel(perid) {
+        $("#form")[0].reset();
+        $("#perid").val(0);
+        $("#Dropdwn option:selected").text("--SelectDept--");
+        $("#ModalTitle").html("Personel Ekle");
+        $("#MyModal").modal();
+    }
+    function AddDepartman(depid) {
+        $("#form")[0].reset();
+        $("#depid").val(0);
+        $("#ModalAddDepartman").modal();
+    }
+    function UpdateDepartman() {
+        $("#UpdateDepartmanModal").modal();
+        $("#Dropdwn option:selected").val(departman.Id);
+        $("#Dropdwn option:selected").text(departman.DepartmanAdi);
+    }
+    function UpdatePersonel(perid) {
+        var url = "/Home/GetPersonelById?id=" + perid;
+        $("#ModalTitle").html("Personel Düzenle");
+        $("#MyModal").modal();
+
+        $.ajax({
+            type: "get",
+            url: url,
+            success: function (data) {
+                var obj = JSON.parse(data);
+                $("#perid").val(obj.personel.id);
+                $("#ad").val(obj.personel.ad);
+                $("#soyad").val(obj.personel.soyad);
+                $("#Dropdwn option:selected").val(obj.departman.Id);
+                $("#Dropdwn option:selected").text(obj.departman.DepartmanAdi);
+            }
+        })
+    }
+     $("#SavePersonel").click(function () {
+        var data = $("#SubmitForm").serialize();
+        $.ajax({
+            type: "post",
+            url: "/Home/SaveDatabase",
+            data: data,
+            success: function (result) {
+                alert("başarılı");
+                window.location.href = "/Home/Index";
+                $("#MyModal").modal("hide");
+            }
+        })
+     })
+
+         function DosyaIslem(perid) {
+             $("#perid").val(perid);
+             $.get('/Home/DosyaListeView/'+perid,  // url
+                 function (data, textStatus, jqXHR) {  // success callback
+                     $('#form_dosyalar').html(data);
+                });
+             $("#DosyaModal").modal();
+         }
+
+
+    function LoadFile2(perid) {
+      
+        var formdata = new FormData();
+        var dosyalar = $("#dosyalar")[0].files;
+        for (var i = 0; i < dosyalar.length; i++) {
+        formdata.append("dosyalar["+i+"]", dosyalar[i]);
+        }
+
+         formdata.append("personelID", perid);
+            $.ajax({
+                method: "POST",
+                url: '@Url.Action("FileUpload2","Home")',
+                data: formdata,
+                processData: false,
+                contentType: false
+            }).done(function (result) {
+                if (result.hasError == false) {
+                    alert(result.message);
+                    window.location.href = "/Home/Index"
+                }
+                else {
+                    alert("dosya null geldi.");
+                }
+            });
+    }
+    function LoadFile(perid) {
+        var formdata = new FormData();
+        formdata.append("image", $("#image")[0].files[0]);
+         formdata.append("personelID", perid);
+            $.ajax({
+                method: "POST",
+                url: '@Url.Action("FileUpload","Home")',
+                data: formdata,
+                processData: false,
+                contentType: false
+            }).done(function (result) {
+                if (result.hasError == false) {
+                    alert(result.message);
+                    window.location.href = "/Home/Index"
+                }
+                else {
+                    alert("resim null geldi.");
+                }
+            });
+         }
+    @*$("#btnSend").click(function ()
+   {
+            var formdata = new FormData(/*$("form").get(0)*/);
+            formdata.append("image", $("#image_" +  $(this).data("data1"))[0].files[0]);
+            formdata.append("personelID",$(this).data("data1"));
+            $.ajax({
+                method: "POST",
+                url: '@Url.Action("FileUpload","Home")',
+                data: formdata,
+                processData: false,
+                contentType: false
+            }).done(function (result) {
+                if (result.hasError == false) {
+                    alert(result.message);
+                    window.location.href = "/Home/Index"
+                }
+                else {
+                    alert("resim null geldi.");
+                }
+            });
+        });*@
+
+    function DeleteDepartman() {
+         $("#DeleteDepartmanModal").modal();
+        $("#Dropdwn option:selected").val(departman.Id);
+        $("#Dropdwn option:selected").text(departman.DepartmanAdi);
+    }
+    function DeletePersonel(perid) {
+        $("#perid").val(perid);
+        $("#DeleteConfirmation").modal();
+    }
+
+    function ConfirmDelete() {
+        var id = $("#perid").val();
+        $.ajax({
+            type: "post",
+            url: "/home/DeletePersonel?id=" + id,
+            success: function (result) {
+                $("#DeleteConfirmation").modal("hide");
+                $(".row_" + id).remove();
+            }
+        })
+    }
+    function ConfirmDepartmanDelete() {
+        //var id = $("#Dropdwn option:selected").val();
+         var data = $("#SubmitForm4").serialize();
+        $.ajax({
+            type: "post",
+            url: "/home/DepartmanDelete",
+             data: data,
+            success: function (result) {
+                $("#DeleteDepartmanModal").modal("hide");
+                //$(".row_" + id).remove();
+            }
+        })
+    }
+
+    $("#SaveDepartman").click(function () {
+        var data2 = $("#SubmitForm2").serialize();
+        $.ajax({
+            type: "post",
+            url: "/Home/SaveDepartmanDatabase",
+            data: data2,
+            success: function (result) {
+                alert("başarılı");
+                window.location.href = "/Home/Index";
+                $("#ModalAddDepartman").modal("hide");
+            }
+        })
+    })
+    $("#SaveDepartman2").click(function () {
+        var data3 = $("#SubmitForm3").serialize();
+        $.ajax({
+            type: "post",
+            url: "/Home/SaveDepartmanDatabase",
+            data: data3,
+            success: function (result) {
+                alert("başarılı");
+                window.location.href = "/Home/Index";
+                $("#UpdateDepartmanModal").modal("hide");
+            }
+        })
+    })
+</script>

@@ -1,0 +1,33 @@
+﻿@model JsonProject3.Controllers.HomeController.allTables
+@{ Layout = null; }
+
+@Html.HiddenFor(m => m.personel.id, new { @id = "perid", @name = "id" })
+
+
+
+@using (Html.BeginForm("FileUpload2", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    <input type="file" name="dosyalar" id="dosyalar" class="form-control" multiple />
+    <br />
+    <a href="#" class="btn btn-success btn-xs" onclick="LoadFile2(@Model.personel.id)">Dosya Yükle</a>
+}
+
+<table>
+    <tr>
+        <td>Dosya Adı</td>
+        <td>Aç</td>
+    </tr>
+
+
+
+    @foreach (var item in Model.dosList.Where(x => x.PersonalId == Model.personel.id))
+    {
+        <tr>
+
+            <td>@item.DosyaId</td>
+            <td>
+                <a href="@item.DosyaYolu"> Dosyayı açmak için tıklayınız. </a>
+            </td>
+        </tr>
+    }
+</table>
